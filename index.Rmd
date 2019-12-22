@@ -21,7 +21,7 @@ editor_options:
 3.  bibliometrix在统计引文网络是不准确的，参照论文的连通图，有一些引用关系可以从下载的bibtex文本中找到，但是没有被bibliometrix捕捉。
 
 # notes
-整个项目都放到了github上：。在统计论文平均每年被引以及关键词突发检测这两个任务中，用到的是python的代码，python代码见`py.ipynb`(需要jupyter环境，或者在github仓库中查看)。
+**整个项目都放到了github上： https://github.com/pzjzeason/bib 。**在统计论文平均每年被引以及关键词突发检测这两个任务中，用到的是python的代码，python代码见`py.ipynb`(运行需要jupyter环境，或者直接在github仓库中查看)。
 
 # 1 文献检索
 **数据源**: Clarivate Analytics Web of Science (http://apps.webofknowledge.com)，选择“核心数据库”
