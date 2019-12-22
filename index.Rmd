@@ -1,16 +1,19 @@
 ---
 title: "科技文献可视化期末作业"
-author: 张杨燚，彭子健 
-output: html_document
+author: 张杨燚 2019101458，彭子健 2019101455
+output: 
+  html_document: 
+    df_print: default
+    highlight: kate
+    keep_md: yes
+    theme: paper
+    toc: yes
 editor_options: 
   chunk_output_type: inline
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-# doubt：
+# doubt(for lovely fire to read)
 1. 引用，可以从WOS citation report里导出每年引用，所以可以得到截止到2016年的GCS，不过与论文的16年5月还是存在差异。
 
 2. bibliometrix在统计引文网络时，会自动忽略GCS为0的论文，因为它们没被任何论文引用。但是在论文里，这样的论文是引文网络的sink node（只进不出），需要保留。我想的解决方案是：人为的将GCS=0的论文设置为1。这不会影响到GCS Top排名。
@@ -20,7 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # notes
 整个项目都放到了github上：。在统计论文平均每年被引以及关键词突发检测这两个任务中，用到的是python的代码，python代码见`py.ipynb`(需要jupyter环境，或者在github仓库中查看)。
 
-# 0 文献检索
+# 1 文献检索
 **数据源**: Clarivate Analytics Web of Science (http://apps.webofknowledge.com)，选择“核心数据库”
 
 
@@ -35,21 +38,23 @@ knitr::opts_chunk$set(echo = TRUE)
 **导出格式**: Bibtex格式
 
 
-# 1 导入数据并转换
-```{r}
+# 2 导入数据并转换
+```{r echo = T, results = 'hide', message=F, warning=F}
 # 导入包
 library(bibliometrix)
 library(igraph)
+library(knitr)
+library(kableExtra)
 
 D <- readFiles('07-16.bib')
 M <- convert2df(D, dbsource='isi', format='bibtex') # 利用convert2df转化
 ```
 
 
-# 2 Citation Network Analysis
+# 3 Citation Network Analysis
 
-## 2.1 Overall Citation Network
-```{r}
+## 3.1 Overall Citation Network
+```{r echo = T, results = 'hide',  message=F, warning=F}
 # 文献互引网络
 ## function that reverses all edges in graph
 graph.reverse <- function (graph) {
@@ -88,7 +93,7 @@ plot.igraph(citationGraph,
             main="Citation Network Analysis")
 ```
 
-## 2.2 Top 3 biggest connected components
+## 3.2 Top 3 biggest connected components
 ```{r}
 singlePoints = which(degree(citationGraph)==0)    
 connectGraph = delete.vertices(citationGraph, singlePoints)  
@@ -121,15 +126,15 @@ plotCompoent(2)
 plotCompoent(3)
 ```
 
-# 3 全局/局部被引分析
-```{r}
+# 4 全局/局部被引分析
+```{r echo = T, results = 'hide',  message=F, warning=F}
 # 被引统计
 citationCount <- localCitations(M, sep=';')$Papers
 citationCountMerge <- merge(citationCount, M, by.citationCount=Paper, by.M=SR,)[,c('TI','AU','SO','Year','GCS', 'LCS')]
 colnames(citationCountMerge) <- c('Title', 'Author', 'Journal', 'Year', 'GCS', 'LCS')
 ```
 
-## 3.1 局部被引top 10
+## 4.1 局部被引top 10
 ```{r}
 # 局部被引top10
 LCS_top_10 = data.frame(
@@ -137,10 +142,11 @@ LCS_top_10 = data.frame(
     citationCountMerge[order(citationCountMerge$LCS,decreasing = TRUE),][c(1:10),],
     row.names=NULL
 )
-LCS_top_10
+kable(LCS_top_10,caption = "LCS Top 10")%>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F)
 ```
 
-## 3.2 全局被引被引top 10
+## 4.2 全局被引被引top 10
 ```{r}
 # 全局被引被引top10
 GCS_top_10 = data.frame(
@@ -148,17 +154,19 @@ GCS_top_10 = data.frame(
     citationCountMerge[order(citationCountMerge$GCS,decreasing = TRUE),][c(1:10),],
     row.names=NULL
 )
-GCS_top_10
+kable(GCS_top_10,caption = "GCS Top 10") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F)
 ```
 
 
-## 3.3 GCS Top 10: citation forward every year from WOS
+## 4.3 GCS Top 10: citation forward every year from WOS
 ```{r}
-citedPerYear = read.csv('./cited-forward.csv')
-head(citedPerYear, 10)
+citedPerYear = read.csv('./cited-forward.csv', check.names=FALSE)
+kable(head(citedPerYear, 10),caption = "Citation forward every year") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F)
 ```
 
-# 4 作者关键词网络分析
+# 5 作者关键词网络分析
 ```{r}
 # 构建关键词共现网络
 coOccNet <- biblioNetwork(M, analysis = "co-occurrences", network = "author_keywords", sep = ";")
@@ -166,21 +174,32 @@ coOccNet <- biblioNetwork(M, analysis = "co-occurrences", network = "author_keyw
 net = networkPlot(coOccNet, normalize="inclusion", weighted=T, n = 16, Title = "Keyword Co-occurrences", type = "fruchterman", size= 14, size.cex= T, edgesize = 6,labelsize=0.8, remove.isolates = TRUE, alpha = 0.8)
 ```
 
-# 5 burst detection 
+# 6 burst detection 
 这部分比较难，涉及了Kleinberg’s Burst算法，我们对此并不熟悉。于是找了实现这个算法的R包`burst`，但是文档说明不够清晰，并且这个实现版本适于连续型数值，而关键词的时间点是以年为单位。这部分我们做了一下的工作：
 1. 按照论文的方式，检索1995～2016符合检索式的文献共1141篇，导出bibtex格式
 2. 统计每年出现的关键词
-3. 对关键词做stem操作，并计算其频数
+3. 对关键词做stemming操作，并计算其频数
 4. 尝试用python的burst_detection包进行关键词的burst detection
 
-## 5.1 统计结果
+## 6.1 关键词统计结果
 关键词stem后按年计数的完整结果请查看`stem-keywords-by-year.json`,每一年的top20关键词及其频数结果在`keywords-freq-top20.csv`。论文图-8中的关键词的每年频数在`keywords-freq.csv`。
 这里我们`keywords-freq-top20.csv`和`selected-keywords-freq.csv`打印出来：
 ```{r}
-read.csv('./keywords-freq-top20.csv')
-read.csv('./selected-keywords-freq.csv')
+top20 = read.csv('./keywords-freq-top20.csv', check.names=FALSE)
+kable(top20,caption = "Top20 keywords frequency every year(1995~2016), scroll to see more") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F) %>%
+  scroll_box(width = "100%", height = "fit-content")
+kable(read.csv('./selected-keywords-freq.csv'),caption = "Author selected keywords frequency every year") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F)
 ```
+
 结合每年的关键词词频和作者选择的关键词每年出现频数，可以观察到，作者挑选的词是较为主观的，大部分词出现的频数都非常低，在当年的关键词频数中的排名都非常靠后，例如function。部分词的涌现时间也存在误差，例如base。
 
-## 5.2 python实现的结果
-burst detection的全部结果参见`py.ipynb`的2.5节。有一些关键词没有监测到burst，可能是这个第三方包实现上存在问题，或者是还有更优参数。有一些结果是比较吻合，例如：rfid我们的结果是2009～2013，作者的结果是2008-2012；artifici的结果跟作者一致，都是1996～1998; expert、neural、wireless、monitor也都比较接近。
+## 7.2 burst detection python实现结果
+burst detection的结果如下：
+```{r}
+kable(read.csv('./burst-result.csv'),caption = "burst detection result of python implement") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+Python代码参见`py.ipynb`的2.5节。有一些关键词没有监测到burst，可能是这个第三方包实现上存在问题，或者是还有更优参数。有一些结果是比较吻合，例如：rfid我们的结果是2009～2013，作者的结果是2008-2012；artifici的结果跟作者一致，都是1996～1998; expert、neural、wireless、monitor也都比较接近。

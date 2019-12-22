@@ -1,3 +1,7 @@
 bib.ipynb
 .ipynb_checkpoints
 .DS_Store
+.Rproj.user
+index_files
+.Rhistory
+index.md
