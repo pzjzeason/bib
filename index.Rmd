@@ -13,13 +13,6 @@ editor_options:
 ---
 
 
-# Doubt(for lovely fire to read)
-1. 引用，可以从WOS citation report里导出每年引用，所以可以得到截止到2016年的GCS，不过与论文的16年5月还是存在差异。
-
-2. bibliometrix在统计引文网络时，会自动忽略GCS为0的论文，因为它们没被任何论文引用。但是在论文里，这样的论文是引文网络的sink node（只进不出），需要保留。我想的解决方案是：人为的将GCS=0的论文设置为1。这不会影响到GCS Top排名。
-
-3.  bibliometrix在统计引文网络是不准确的，参照论文的连通图，有一些引用关系可以从下载的bibtex文本中找到，但是没有被bibliometrix捕捉。
-
 # Note
 **整个项目都放到了github上： https://github.com/pzjzeason/bib 。**在统计论文平均每年被引以及关键词突发检测这两个任务中，用到的是python的代码，python代码见`py.ipynb`(运行需要jupyter环境，或者直接在github仓库中查看)。
 
@@ -198,7 +191,7 @@ kable(read.csv('./selected-keywords-freq.csv'),caption = "Author selected keywor
 
 结合每年的关键词词频和作者选择的关键词每年出现频数，可以观察到，作者挑选的词是较为主观的，大部分词出现的频数都非常低，在当年的关键词频数中的排名都非常靠后，例如function。部分词的涌现时间也存在误差，例如base。
 
-## 7.2 burst detection python实现结果
+## 6.2 burst detection python实现结果
 burst detection的结果如下：
 ```{r}
 kable(read.csv('./burst-result.csv'),caption = "burst detection result of python implement") %>%
